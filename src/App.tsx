@@ -8,7 +8,7 @@ import {
     WalletDisconnectButton,
     WalletMultiButton
 } from '@solana/wallet-adapter-react-ui';
-import { clusterApiUrl } from '@solana/web3.js';
+import { clusterApiUrl, SystemProgram, Transaction , PublicKey } from '@solana/web3.js';
 
 // Default styles that can be overridden by your app
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -26,12 +26,14 @@ export function App() {
                 <WalletModalProvider> {/*context provider that provides a modal dialog for connecting to wallets. It wraps the components that need access to the wallet connection functionality, such as the WalletMultiButton and WalletDisconnectButton.*/}
                     <Topbar />
                     <Portfolio />
-
+                    <Send />
+                    <Faucet />
                 </WalletModalProvider>
             </WalletProvider>
         </ConnectionProvider>
   );
 }
+
 
 function Topbar() {
     const {publicKey} = useWallet();
@@ -61,4 +63,41 @@ function Portfolio() {
     </div>
 }
 
+function Send(){
+    const{publicKey, sendTransaction} = useWallet();
+    const {connection} = useConnection();
+    return (
+    <div >
+        <input id="wallet-address" type="text" placeholder="Enter wallet address"></input>
+        <input id="amount" type="text" placeholder="Amount"></input>
+        
+        <button onClick={async() => {
+            const transaction = new Transaction().add(
+                SystemProgram.transfer({
+                    fromPubkey: publicKey!,
+                    toPubkey: new  PublicKey(document.getElementById("wallet-address")!.value),
+                    lamports: document.getElementById("amount")!.value * 1e9,
+                })
+            );
+            await sendTransaction(transaction, connection);
+            
+        }}>Send</button>
+        
+    </div>
+    );
+}
+
+function Faucet(){
+    const {connection} = useConnection();
+
+    return <div>
+        <input id="address" type="text" placeholder="Enter wallet address"></input>
+        <input id="amount" type="text" placeholder="Amount"></input>
+        <button onClick={() => {
+            connection.requestAirdrop(new PublicKey(document.getElementById("address")!.value), 
+            document.getElementById("amount")!.value * 1e9);
+        }}>Request Airdrop</button>
+     </div>
+}
+ 
 export default App;
