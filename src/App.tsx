@@ -26,8 +26,7 @@ import {
   clusterApiUrl,
   SystemProgram,
   Transaction,
-  PublicKey,
-  TOKEN_PROGRAM_ID,
+  PublicKey
 } from '@solana/web3.js';
 import {
   estimateTransactionFee,
@@ -67,8 +66,8 @@ function StatusAlert({ status }: { status: StatusMessage | null }) {
   const icons: Record<StatusType, React.ReactNode> = {
     loading: <span className="spinner" aria-hidden="true" />,
     success: '✓',
-    error:   '✕',
-    info:    'ℹ',
+    error: '✕',
+    info: 'ℹ',
   };
 
   return (
@@ -148,6 +147,7 @@ export function App() {
               <div className="actions-grid">
                 <Send />
                 <Faucet />
+                <Activity />
               </div>
             </main>
             <AppFooter />
@@ -224,6 +224,24 @@ function Portfolio() {
   const [balance, setBalance] = useState<number | null>(null);
   const [tokens, setTokens] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [solPrice, setSolPrice] = useState<number | null>(null);
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        // 1. Make the request to CoinGecko
+        const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+        // 2. Convert the response string into a usable JSON object
+        const data = await response.json();
+        // 3. Extract the price (e.g., data["solana"]["usd"])
+        setSolPrice(data.solana.usd);
+      }
+      catch (err) {
+        console.log("Failed to fetch SOL price", err);
+      }
+    }
+    fetchPrice();
+  }, []);
+
 
   // Function to fetch balance — wrapped in useCallback so it doesn't
   // recreate on every render (a performance optimization)
@@ -234,8 +252,8 @@ function Portfolio() {
       // getBalance returns lamports, so we divide by 1e9 to get SOL
       const lamports = await connection.getBalance(publicKey);
       setBalance(lamports / 1e9);
-      const tokenAccounts  = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        programId : TOKEN_PROGRAM_ID
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+        programId: TOKEN_PROGRAM_ID
       });
       const parsedTokens = tokenAccounts.value.map((tokenAccountInfo) => {
         const accountData = tokenAccountInfo.account.data.parsed.info;
@@ -302,7 +320,9 @@ function Portfolio() {
               {balance !== null ? (
                 <>
                   <p className="balance">{balance.toFixed(4)}<span style={{ fontSize: '18px', marginLeft: '6px', opacity: 0.7 }}>SOL</span></p>
-                  <p className="balance-usd">≈ ${(balance * 180).toFixed(2)} USD</p>
+                  <p className="balance-usd">
+                    {solPrice !== null ? `≈ $${(balance * solPrice).toFixed(2)} USD` : 'Fetching price...'}
+                  </p>
                 </>
               ) : (
                 <p className="balance" style={{ opacity: 0.5 }}>Loading...</p>
@@ -667,6 +687,62 @@ function Faucet() {
       )}
     </section>
   );
+}
+
+
+// this component is for the transaction history
+function Activity() {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const { publicKey } = useWallet();
+  const { connection } = useConnection();
+  useEffect(() => {
+    if (!publicKey) return;
+    const fetchHistory = async () => {
+      try {
+        const sigs = await connection.getSignaturesForAddress(publicKey, { limit: 10 });
+        console.log("My Signatures:", sigs);
+        setTransactions(sigs);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchHistory();
+
+  }, [publicKey, connection]); // Closes the useEffect, and tells it to re-run if these variables change
+  return (
+    <section className="card" aria-labelledby="activity-heading" style={{ gridColumn: '1 / -1' }}>
+      <div className="card-icon" aria-hidden="true" style={{ background: 'rgba(0, 194, 255, 0.1)', border: '1px solid rgba(0, 194, 255, 0.2)', color: 'var(--sol-blue)' }}>⚡</div>
+      <h3 id="activity-heading">Recent Activity</h3>
+      <p className="card-hint">Your latest transactions on Solana Devnet</p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+        {transactions.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>No recent transactions found.</p>
+        ) : (
+          transactions.map((tx, index) => (
+            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: 'var(--bg-input)', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <a href={`https://explorer.solana.com/tx/${tx.signature}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ color: 'var(--sol-blue)', textDecoration: 'none', fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: '14px' }}>
+                  {tx.signature.slice(0, 8)}...{tx.signature.slice(-8)} ↗
+                </a>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {tx.blockTime ? new Date(tx.blockTime * 1000).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Pending...'}
+                </span>
+              </div>
+              <div>
+                {tx.err ? (
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#ff7070', background: 'rgba(255, 80, 80, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>Failed</span>
+                ) : (
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--sol-green)', background: 'rgba(20, 241, 149, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>Success</span>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
