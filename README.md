@@ -1,4 +1,6 @@
-# bun-react-template
+# RabbitFolio
+
+A minimalistic Solana dApp portfolio showcasing Web3 skills. Built with React, Bun, and Solana Web3.js.
 
 To install dependencies:
 

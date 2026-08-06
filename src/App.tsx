@@ -176,9 +176,7 @@ function Topbar() {
           <img src={rabbitLogo} className="topbar-logo-img" alt="Rabbit Logo" />
         </div>
         <div className="topbar-title-container">
-          <span className="brand-name">Rabbit</span>
-          <span className="brand-separator">|</span>
-          <span className="page-name">Portfolio</span>
+          <span className="brand-name">RabbitFolio</span>
         </div>
         <span className="topbar-badge">Devnet</span>
       </div>
@@ -754,7 +752,7 @@ function Activity() {
 function AppFooter() {
   return (
     <footer className="app-footer" role="contentinfo">
-      <span>Rabbit Portfolio · Solana Devnet</span>
+      <span>RabbitFolio · Solana Devnet</span>
       <div className="footer-links">
         <a
           href="https://solana.com/developers"
