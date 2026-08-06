@@ -711,7 +711,11 @@ function Activity() {
   }, [publicKey, connection]); // Closes the useEffect, and tells it to re-run if these variables change
   return (
     <section className="card" aria-labelledby="activity-heading" style={{ gridColumn: '1 / -1' }}>
-      <div className="card-icon" aria-hidden="true" style={{ background: 'rgba(0, 194, 255, 0.1)', border: '1px solid rgba(0, 194, 255, 0.2)', color: 'var(--sol-blue)' }}>⚡</div>
+      <div className="card-icon" aria-hidden="true" style={{ background: 'rgba(0, 194, 255, 0.1)', border: '1px solid rgba(0, 194, 255, 0.2)', color: 'var(--sol-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
       <h3 id="activity-heading">Recent Activity</h3>
       <p className="card-hint">Your latest transactions on Solana Devnet</p>
 
@@ -767,7 +771,7 @@ function AppFooter() {
           Explorer
         </a>
         <a
-          href="https://github.com/"
+          href="https://github.com/AbhinavJD7"
           target="_blank"
           rel="noopener noreferrer"
         >
